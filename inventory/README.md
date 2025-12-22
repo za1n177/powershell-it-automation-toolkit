@@ -27,3 +27,21 @@ Useful for:
 2. Navigate to the script location:
    ```powershell
    cd path\to\powershell-it-automation-toolkit\inventory
+    .\Get-Computer-Inventory.ps1
+---
+
+## ✅ Sample Output
+
+```text
+Collecting computer inventory...
+
+Computer Name : DESKTOP-RITKQ2C
+OS            : Microsoft Windows 11 Pro
+IP Address    :
+
+Disk Information:
+
+DeviceID SizeGB FreeGB
+-------- ------ ------
+C:       238.02 111.73
+D:       0.33   0.3
