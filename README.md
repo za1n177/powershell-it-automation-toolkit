@@ -38,7 +38,13 @@ The focus is on:
 
 The scripts in this repository have been tested successfully in a real Windows environment.
 
-### Server Connectivity Test Example
+### Entra ID Connectivity
+![Entra Graph Connection](screenshots/entra-connect-success.png)
+
+_Authenticated to Microsoft Entra ID using Microsoft Graph PowerShell with delegated permissions._
+
+### Server Connectivity Validation
+
 ![Server Connectivity Test](screenshots/test-server-connectivity-success.png)
 
 _Test executed locally on Windows 11 using PowerShell with execution policy set to RemoteSigned._
