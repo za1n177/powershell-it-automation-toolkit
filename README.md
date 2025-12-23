@@ -41,6 +41,8 @@ The scripts in this repository have been tested successfully in a real Windows e
 ### Server Connectivity Test Example
 ![Server Connectivity Test](screenshots/test-server-connectivity-success.png)
 
+_Test executed locally on Windows 11 using PowerShell with execution policy set to RemoteSigned._
+
 This test validates:
 - DNS resolution
 - Network connectivity (ping)
