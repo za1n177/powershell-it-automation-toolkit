@@ -33,3 +33,15 @@ The focus is on:
 - Scripts are provided for **learning and demonstration**
 - Always test in a lab environment before production use
 - Scripts may require administrative privileges
+
+## ✅ Verified Script Execution
+
+The scripts in this repository have been tested successfully in a real Windows environment.
+
+### Server Connectivity Test Example
+![Server Connectivity Test](screenshots/test-server-connectivity-success.png)
+
+This test validates:
+- DNS resolution
+- Network connectivity (ping)
+- TCP port availability (e.g., HTTPS / RDP / SMB)
