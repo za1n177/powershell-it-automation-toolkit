@@ -42,6 +42,7 @@ The scripts in this repository have been tested successfully in a real Windows e
 ![Entra Graph Connection](screenshots/entra-connect-success.png)
 
 _Test executed locally on Windows 11 using Microsoft Graph PowerShell with delegated permissions and `-WhatIf` (dry-run)._
+_The script supports real execution when `-WhatIf` is removed; dry-run mode was used for safe validation._
 
 ### Server Connectivity Validation
 
