@@ -33,3 +33,18 @@ This folder contains PowerShell scripts related to:
   -Groups "GG-M365-Users","GG-VPN-Users" `
   -ForceChangePasswordAtLogon `
   -WhatIf
+
+## 🧪 Lab Validation
+
+Note: Script is designed for on-prem Active Directory; validation focused on identity lifecycle logic using Microsoft Entra ID due to lab constraints.
+
+User lifecycle logic was validated using Microsoft Entra ID (Azure AD).
+
+Test user created:
+- Username: lab.user1
+- Platform: Microsoft Entra ID
+- Scope: Identity and access management concepts
+
+Role assigned during testing: User Administrator (RBAC validation).
+
+Azure Resource Group: rg-ad-lab
