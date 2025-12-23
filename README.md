@@ -41,7 +41,7 @@ The scripts in this repository have been tested successfully in a real Windows e
 ### Entra ID Connectivity
 ![Entra Graph Connection](screenshots/entra-connect-success.png)
 
-_Authenticated to Microsoft Entra ID using Microsoft Graph PowerShell with delegated permissions._
+_Test executed locally on Windows 11 using Microsoft Graph PowerShell with delegated permissions and `-WhatIf` (dry-run)._
 
 ### Server Connectivity Validation
 
