@@ -4,16 +4,31 @@
 
 .DESCRIPTION
     - Creates a user in a target OU
-    - Sets basic attributes (display name, UPN, department, title)
+    - Sets key attributes (display name, UPN, department, title)
     - Enables the account
-    - Adds user to one or more AD groups (optional)
-    - Forces password change at first logon (optional)
+    - Optionally adds the user to AD groups
+    - Supports -WhatIf for safe dry-run testing
 
 .REQUIREMENTS
     - ActiveDirectory module (RSAT)
-    - Domain connectivity and permissions to create users
+    - Domain connectivity + permissions to create users
 
 .EXAMPLE
+    # Dry-run (no changes made)
+    .\New-ADUser-Onboarding.ps1 `
+      -SamAccountName "jdoe" `
+      -GivenName "John" `
+      -Surname "Doe" `
+      -DisplayName "John Doe" `
+      -UserPrincipalName "jdoe@contoso.com" `
+      -OU "OU=Users,DC=contoso,DC=com" `
+      -TempPassword "P@ssw0rd!123" `
+      -Groups "GG-M365-Users","GG-VPN-Users" `
+      -ForceChangePasswordAtLogon `
+      -WhatIf
+
+.EXAMPLE
+    # Real run
     .\New-ADUser-Onboarding.ps1 `
       -SamAccountName "jdoe" `
       -GivenName "John" `
@@ -27,30 +42,37 @@
 
 .NOTES
     Author: Zaini
-    Safe for lab/testing. Review before production use.
+    For lab/testing. Review before production use.
 #>
 
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess=$true)]
 param(
     [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
     [string]$SamAccountName,
 
     [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
     [string]$GivenName,
 
     [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
     [string]$Surname,
 
     [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
     [string]$DisplayName,
 
     [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
     [string]$UserPrincipalName,
 
     [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
     [string]$OU,
 
     [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
     [string]$TempPassword,
 
     [Parameter(Mandatory=$false)]
@@ -68,14 +90,15 @@ param(
 
 # --- Pre-checks ---
 if (-not (Get-Module -ListAvailable -Name ActiveDirectory)) {
-    Write-Host "❌ ActiveDirectory module not found. Install RSAT or run on a domain admin workstation." -ForegroundColor Red
+    Write-Host "❌ ActiveDirectory module not found." -ForegroundColor Red
+    Write-Host "Install RSAT or run on a domain-joined admin workstation/server with AD tools." -ForegroundColor Yellow
     exit 1
 }
 
 Import-Module ActiveDirectory -ErrorAction Stop
 
 Write-Host "Creating AD user: $DisplayName ($SamAccountName)" -ForegroundColor Cyan
-Write-Host "OU: $OU" -ForegroundColor DarkGray
+Write-Host "Target OU: $OU" -ForegroundColor DarkGray
 Write-Host "----------------------------------------"
 
 # Prevent duplicates
@@ -85,27 +108,29 @@ if ($existing) {
     exit 1
 }
 
+# Convert password
+$securePass = ConvertTo-SecureString $TempPassword -AsPlainText -Force
+
 try {
-    $securePass = ConvertTo-SecureString $TempPassword -AsPlainText -Force
+    if ($PSCmdlet.ShouldProcess("AD User '$SamAccountName' in '$OU'", "Create")) {
 
-    # Create user
-    New-ADUser `
-        -Name $DisplayName `
-        -SamAccountName $SamAccountName `
-        -GivenName $GivenName `
-        -Surname $Surname `
-        -DisplayName $DisplayName `
-        -UserPrincipalName $UserPrincipalName `
-        -Path $OU `
-        -AccountPassword $securePass `
-        -Enabled $true `
-        -ChangePasswordAtLogon:$ForceChangePasswordAtLogon.IsPresent `
-        -Department $Department `
-        -Title $Title `
-        -PassThru | Out-Null
+        New-ADUser `
+            -Name $DisplayName `
+            -SamAccountName $SamAccountName `
+            -GivenName $GivenName `
+            -Surname $Surname `
+            -DisplayName $DisplayName `
+            -UserPrincipalName $UserPrincipalName `
+            -Path $OU `
+            -AccountPassword $securePass `
+            -Enabled $true `
+            -ChangePasswordAtLogon:$ForceChangePasswordAtLogon.IsPresent `
+            -Department $Department `
+            -Title $Title `
+            -ErrorAction Stop | Out-Null
 
-    Write-Host "✅ User created successfully." -ForegroundColor Green
-
+        Write-Host "✅ User created successfully." -ForegroundColor Green
+    }
 } catch {
     Write-Host "❌ Failed to create user: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
@@ -116,8 +141,10 @@ if ($Groups -and $Groups.Count -gt 0) {
     Write-Host "`nAdding user to groups..." -ForegroundColor Yellow
     foreach ($g in $Groups) {
         try {
-            Add-ADGroupMember -Identity $g -Members $SamAccountName -ErrorAction Stop
-            Write-Host "   ✅ Added to: $g" -ForegroundColor Green
+            if ($PSCmdlet.ShouldProcess("Group '$g'", "Add member '$SamAccountName'")) {
+                Add-ADGroupMember -Identity $g -Members $SamAccountName -ErrorAction Stop
+                Write-Host "   ✅ Added to: $g" -ForegroundColor Green
+            }
         } catch {
             Write-Host "   ❌ Failed to add to $g : $($_.Exception.Message)" -ForegroundColor Red
         }
