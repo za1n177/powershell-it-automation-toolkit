@@ -1,155 +1,136 @@
-# Entra ID User → Group Assignment (PowerShell + Microsoft Graph)
+# Entra ID – User to Group Assignment Automation (PowerShell)
 
-Automate adding a Microsoft Entra ID (Azure AD) user to one or more groups using Microsoft Graph PowerShell.
+Enterprise-ready PowerShell automation to safely assign Microsoft Entra ID (Azure AD) users to security or Microsoft 365 groups using Microsoft Graph.
 
-✅ Supports:
-- Add by **Group Names** or **Group IDs**
-- `-WhatIf` safety mode
-- Idempotent behavior (skip if already a member)
-- Clear console output (success / skip / failed)
+Built with **idempotency**, **WhatIf safety**, and **production best practices** in mind.
 
 ---
 
-## 📌 What this does
+## 🚀 Features
 
-You run one command and it will:
-1. Connect to Microsoft Graph (interactive login)
-2. Resolve the target user by UPN
-3. Resolve groups (by name or by ID)
-4. Add the user to each group (or skip if already in)
+- Assign users to **multiple groups** in one run
+- Supports **UPN, Group Name, or Group ID**
+- Built-in **WhatIf (dry run)** support
+- Idempotent (safe to re-run, skips existing members)
+- Handles duplicate display names safely
+- Clear console output (success / skip / failure)
+- Microsoft Graph SDK (modern & supported)
 
 ---
 
-## 📂 Folder structure
+## 📁 Folder Structure
 
+```text
 entra-id-user-management/
-├─ EntraUserToGroups.ps1
-├─ Entra-User-Onboarding.ps1
-├─ README.md
-└─ screenshots/
-├─ 01-connect-mggraph-context.png
-├─ 02-get-mguser-validation.png
-├─ 03-whatif-run.png
-├─ 04-groups-added-success.png
-└─ 05-idempotent-retry.png
+├── EntraUserToGroups.ps1
+├── Entra-User-Onboarding.ps1
+├── README.md
+└── screenshots/
+    ├── 01-graph-connected.png
+    ├── 02-get-mguser-validation.png
+    ├── 03-whatif-run.png
+    └── 04-groups-added-success.png
 
-yaml
-Copy code
+🔐 Prerequisites
+	•	PowerShell 5.1+ or PowerShell 7+
+	•	Microsoft Graph PowerShell SDK
+	•	Entra ID role:
+	•	User Administrator or
+	•	Groups Administrator
+	•	Internet access to Microsoft Graph
 
----
+Install Graph SDK (once):
 
-## 🔐 Prerequisites
-
-### 1) PowerShell
-- Windows PowerShell 5.1+ or PowerShell 7+
-
-### 2) Microsoft Graph PowerShell
-Install once:
-```powershell
 Install-Module Microsoft.Graph -Scope CurrentUser
-3) Sign-in / roles
-Your account must have permission to:
 
-Read users
 
-Read groups
+🔑 Required Microsoft Graph Permissions
 
-Add group members
-
-In labs, User Administrator + Groups Administrator is usually enough.
-
-✅ Required Microsoft Graph permissions (Scopes)
-This script uses delegated permissions via interactive login.
-
-Recommended:
+Delegated permissions:
 
 User.Read.All
-
 Group.ReadWrite.All
-
 Directory.ReadWrite.All
 
-Example connect:
+Connect with correct scopes:
 
-powershell
-Copy code
-Connect-MgGraph -TenantId "<YOUR_TENANT_ID>" -Scopes `
-  "User.Read.All","Group.ReadWrite.All","Directory.ReadWrite.All"
-🚀 Quick start
-Option A — Add user to groups by Group Name
-powershell
-Copy code
-.\EntraUserToGroups.ps1 `
-  -UserPrincipalName "lab.user1@yourtenant.onmicrosoft.com" `
-  -Groups "M365 Users","IT Helpdesk" `
-  -WhatIf
-Remove -WhatIf to execute for real.
-
-Option B — Add user to groups by Group ID (recommended for production)
-powershell
-Copy code
-.\EntraUserToGroups.ps1 `
-  -UserPrincipalName "lab.user1@yourtenant.onmicrosoft.com" `
-  -GroupIds "7fdd30cd-888a-4828-b4a2-254bed2a8169","bcafecc7-21e1-4920-912c-62dcf018c44b" `
-  -WhatIf
-🔎 How to find Group IDs
-Search by exact display name:
-
-powershell
-Copy code
-Get-MgGroup -Filter "displayName eq 'M365 Users'" -ConsistencyLevel eventual -All |
-  Select DisplayName, Id
-🧪 Verification commands
-Check your current tenant + scopes:
-
-powershell
-Copy code
-Get-MgContext | Select TenantId, Scopes
-Confirm the user exists:
-
-powershell
-Copy code
-Get-MgUser -UserId "lab.user1@yourtenant.onmicrosoft.com" |
-  Select DisplayName, UserPrincipalName, Id
-🖼️ Screenshots (proof of run)
-1) Graph context + scopes
-
-2) User lookup validation
-
-3) Safe test (-WhatIf)
-
-4) Successful add
-
-5) Re-run (idempotent / already exists)
-
-🧠 Common issues
-403 Forbidden (Get-MgUser / Get-MgGroup)
-You’re connected, but your account/scopes don’t allow reading directory objects.
-Fix:
-
-Reconnect with proper scopes:
-
-powershell
-Copy code
 Disconnect-MgGraph
 Connect-MgGraph -Scopes "User.Read.All","Group.ReadWrite.All","Directory.ReadWrite.All"
-Ensure your account has the right Entra admin role.
 
-“Tenant not found” (AADSTS90002)
-You used a domain name instead of the Tenant GUID.
-Fix:
+🧪 Usage Examples
 
-Use Azure Portal → Entra ID → Overview → Tenant ID
+1️⃣ Safe test (recommended)
 
-Or the “Directories” screen → Directory ID
+.\EntraUserToGroups.ps1 `
+  -UserPrincipalName "lab.user1@tenant.onmicrosoft.com" `
+  -GroupIds "GUID1","GUID2" `
+  -WhatIf
 
-✅ Notes / Best practices
-Prefer Group IDs in production to avoid duplicates.
+2️⃣ Production run
 
-Always run with -WhatIf first.
+.\EntraUserToGroups.ps1 `
+  -UserPrincipalName "lab.user1@tenant.onmicrosoft.com" `
+  -GroupIds "GUID1","GUID2"
 
-If you see “already exist” errors, it means the user is already a member (safe to ignore).
+🖼 Screenshots (Proof of Run)
+	1.	Graph context & scopes
+	2.	User lookup validation
+	3.	WhatIf (dry run)
+	4.	Successful group assignment
 
-## 📄 License
+📂 See /screenshots folder.
+
+⚠️ Common Issues
+
+403 Forbidden (Get-MgUser / Get-MgGroup)
+
+Cause: Missing permissions
+Fix: Reconnect with correct scopes and verify admin role.
+
+⸻
+
+Tenant not found (AADSTS90002)
+
+Cause: Domain used instead of Tenant GUID
+Fix: Use Directory ID from Azure Portal → Entra ID → Overview.
+
+⸻
+
+“Already exists” error
+
+Meaning: User is already a member
+Status: Safe to ignore (idempotent behavior)
+
+⸻
+
+✅ Best Practices
+	•	Always run with -WhatIf first
+	•	Prefer Group IDs in production
+	•	Safe to re-run automation
+	•	Store scripts in version control
+	•	Use logging for large environments
+
+⸻
+
+📄 License
+
 MIT License – free to use, modify, and distribute.
 
+---
+
+# ✅ PART 2 — PRO VERSION ROADMAP (FOR GITHUB + SALES)
+
+Add this section at the **bottom of README** or as `ROADMAP.md`:
+
+```md
+## 🧭 Roadmap (Pro Version)
+
+Planned enhancements:
+- Bulk onboarding via CSV
+- Optional license assignment (M365 / EMS / E5)
+- Logging to CSV / JSON
+- Error summary report
+- Non-interactive (app registration) mode
+- CI/CD friendly execution
+
+Interested? Open an issue or contact the author.
