@@ -1,109 +1,151 @@
-# Entra ID User to Groups Automation (PowerShell)
+# Entra ID User → Group Assignment (PowerShell + Microsoft Graph)
 
-A **production-ready PowerShell script** to safely add Microsoft Entra ID (Azure AD) users to one or more Microsoft 365 / Security groups using **Microsoft Graph**.
+Automate adding a Microsoft Entra ID (Azure AD) user to one or more groups using Microsoft Graph PowerShell.
 
-Built with **safety, idempotency, and real enterprise usage** in mind.
-
----
-
-## 🚀 Features
-
-- ✅ Add a user to **multiple Entra ID groups**
-- ✅ Supports **GroupIds (recommended)** and Group Display Names
-- ✅ Safe **`-WhatIf` dry-run mode**
-- ✅ Idempotent (safe to re-run; skips existing members)
-- ✅ Uses **Microsoft Graph PowerShell SDK**
-- ✅ Clear, audit-friendly console output
-- ✅ Works with WAM (Windows Account Manager) authentication
+✅ Supports:
+- Add by **Group Names** or **Group IDs**
+- `-WhatIf` safety mode
+- Idempotent behavior (skip if already a member)
+- Clear console output (success / skip / failed)
 
 ---
 
-## 📁 Folder Structure
+## 📌 What this does
+
+You run one command and it will:
+1. Connect to Microsoft Graph (interactive login)
+2. Resolve the target user by UPN
+3. Resolve groups (by name or by ID)
+4. Add the user to each group (or skip if already in)
+
+---
+
+## 📂 Folder structure
 
 entra-id-user-management/
-│
-├── Add-EntraUserToGroups.ps1
-├── README.md
-├── docs/
-│   └── screenshots/
-│       ├── 01-connect-graph.png
-│       ├── 02-whatif-preview.png
-│       ├── 03-add-success.png
-│
-└── examples/
-├── add-by-groupid.ps1
-└── add-by-groupname.ps1
+├─ EntraUserToGroups.ps1
+├─ Entra-User-Onboarding.ps1
+├─ README.md
+└─ screenshots/
+├─ 01-connect-mggraph-context.png
+├─ 02-get-mguser-validation.png
+├─ 03-whatif-run.png
+├─ 04-groups-added-success.png
+└─ 05-idempotent-retry.png
+
+yaml
+Copy code
+
 ---
 
 ## 🔐 Prerequisites
 
+### 1) PowerShell
 - Windows PowerShell 5.1+ or PowerShell 7+
-- Microsoft Graph PowerShell SDK
 
-Install if needed:
+### 2) Microsoft Graph PowerShell
+Install once:
 ```powershell
 Install-Module Microsoft.Graph -Scope CurrentUser
+3) Sign-in / roles
+Your account must have permission to:
 
-🔑 Required Microsoft Graph Permissions
+Read users
 
-Delegated permissions:
-	•	User.ReadWrite.All
-	•	Group.ReadWrite.All
-	•	Directory.ReadWrite.All
+Read groups
 
-These are requested automatically during sign-in.
+Add group members
 
-🔌 Connect to Microsoft Graph (Example)
-Connect-MgGraph `
-  -Scopes "User.ReadWrite.All","Group.ReadWrite.All","Directory.ReadWrite.All"
+In labs, User Administrator + Groups Administrator is usually enough.
 
-Verify connection:
-Get-MgContext | Select TenantId, Scopes
+✅ Required Microsoft Graph permissions (Scopes)
+This script uses delegated permissions via interactive login.
 
-🧑‍💻 Usage Examples
+Recommended:
 
-▶ Dry Run (Recommended)
-.\Add-EntraUserToGroups.ps1 `
-  -UserPrincipalName "lab.user1@tenant.onmicrosoft.com" `
-  -GroupIds "GROUPID-1","GROUPID-2" `
+User.Read.All
+
+Group.ReadWrite.All
+
+Directory.ReadWrite.All
+
+Example connect:
+
+powershell
+Copy code
+Connect-MgGraph -TenantId "<YOUR_TENANT_ID>" -Scopes `
+  "User.Read.All","Group.ReadWrite.All","Directory.ReadWrite.All"
+🚀 Quick start
+Option A — Add user to groups by Group Name
+powershell
+Copy code
+.\EntraUserToGroups.ps1 `
+  -UserPrincipalName "lab.user1@yourtenant.onmicrosoft.com" `
+  -Groups "M365 Users","IT Helpdesk" `
   -WhatIf
+Remove -WhatIf to execute for real.
 
-▶ Actual Execution
-.\Add-EntraUserToGroups.ps1 `
-  -UserPrincipalName "lab.user1@tenant.onmicrosoft.com" `
-  -GroupIds "GROUPID-1","GROUPID-2"
+Option B — Add user to groups by Group ID (recommended for production)
+powershell
+Copy code
+.\EntraUserToGroups.ps1 `
+  -UserPrincipalName "lab.user1@yourtenant.onmicrosoft.com" `
+  -GroupIds "7fdd30cd-888a-4828-b4a2-254bed2a8169","bcafecc7-21e1-4920-912c-62dcf018c44b" `
+  -WhatIf
+🔎 How to find Group IDs
+Search by exact display name:
 
-📌 Sample Output
+powershell
+Copy code
+Get-MgGroup -Filter "displayName eq 'M365 Users'" -ConsistencyLevel eventual -All |
+  Select DisplayName, Id
+🧪 Verification commands
+Check your current tenant + scopes:
 
-Connected as: WAM session (account hidden)
-Target user: Lab User One (lab.user1@tenant.onmicrosoft.com)
+powershell
+Copy code
+Get-MgContext | Select TenantId, Scopes
+Confirm the user exists:
 
-Groups to process: 2
- - M365 Users
- - IT Helpdesk
+powershell
+Copy code
+Get-MgUser -UserId "lab.user1@yourtenant.onmicrosoft.com" |
+  Select DisplayName, UserPrincipalName, Id
+🖼️ Screenshots (proof of run)
+1) Graph context + scopes
 
-ADDED: M365 Users
-ADDED: IT Helpdesk
-Done.
+2) User lookup validation
 
-Re-running the script safely:
+3) Safe test (-WhatIf)
 
-SKIP (already member): M365 Users
-SKIP (already member): IT Helpdesk
-Done.
+4) Successful add
 
-🛡 Design Principles
-	•	Safe-by-default using -WhatIf
-	•	Idempotent logic (no duplicate membership errors)
-	•	Explicit group resolution (ID-first)
-	•	Clear output for helpdesk and audit trails
-	•	Microsoft Graph native (future-proof)
+5) Re-run (idempotent / already exists)
 
-⸻
+🧠 Common issues
+403 Forbidden (Get-MgUser / Get-MgGroup)
+You’re connected, but your account/scopes don’t allow reading directory objects.
+Fix:
 
-⚠ Common Notes
-	•	If multiple groups share the same display name, use -GroupIds
-	•	Always test with -WhatIf before real execution
-	•	Avoid committing real tenant IDs or real user emails
+Reconnect with proper scopes:
 
+powershell
+Copy code
+Disconnect-MgGraph
+Connect-MgGraph -Scopes "User.Read.All","Group.ReadWrite.All","Directory.ReadWrite.All"
+Ensure your account has the right Entra admin role.
 
+“Tenant not found” (AADSTS90002)
+You used a domain name instead of the Tenant GUID.
+Fix:
+
+Use Azure Portal → Entra ID → Overview → Tenant ID
+
+Or the “Directories” screen → Directory ID
+
+✅ Notes / Best practices
+Prefer Group IDs in production to avoid duplicates.
+
+Always run with -WhatIf first.
+
+If you see “already exist” errors, it means the user is already a member (safe to ignore).
