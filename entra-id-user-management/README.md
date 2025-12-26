@@ -149,3 +149,7 @@ Prefer Group IDs in production to avoid duplicates.
 Always run with -WhatIf first.
 
 If you see “already exist” errors, it means the user is already a member (safe to ignore).
+
+## 📄 License
+MIT License – free to use, modify, and distribute.
+
